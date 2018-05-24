@@ -1,0 +1,28 @@
+1. 訂單 level
+    1) nth.order/nth.days
+    2) 處理取消失敗退貨 (?)
+    3) 業績組成
+        a. 新舊會員交易
+        b. source (APP/WEB/MOB...)
+        c. 商品類型組成 (暢銷/基本款/.../名稱tagging)
+        d. 折扣組成
+    ====== (pred)
+    1) 前次購買狀況 (cut point?前次/前月/前年)
+2. 訂單明細 level
+    1) 訂單 level 資訊：nth.order......
+    2) 商品類型 (by銷量/名稱tagging)
+    3) 吸引會員類型
+    4) 第幾天銷售
+3. 會員 level
+    1) rfm
+    2) 折扣偏好
+    3) 商品類型偏好 (銷量/early adopter/名稱tagging/SKU/喜好的variation)
+    4) channel偏好
+    5) (付款方式偏好)
+4. daily level (成長率...)
+5. 跑多家
+6. 商店分群
+7. 預測業績 (業績動能)
+8. 取消時間影響分析
+9. 名稱tagging (很難跑多家？)
+    
