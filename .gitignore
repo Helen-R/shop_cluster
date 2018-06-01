@@ -7,3 +7,4 @@ data/
 plots/
 .httr-oauth
 gcs.oauth
+.zip
