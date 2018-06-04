@@ -8,3 +8,4 @@ plots/
 .httr-oauth
 gcs.oauth
 .zip
+*.zip
