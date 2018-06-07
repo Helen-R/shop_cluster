@@ -12,7 +12,7 @@ load(fnm)
 if(sum(grepl("TotalPayment", colnames(dt.dly)))>0) setnames(dt.dly, "TotalPayment", "gross.sales")
 dt.dly.raw <- dt.dly
 # date.ls <- seq.Date(as.Date("2013-07-01"), as.Date("2016-04-30"), "month")
-suffix <- sprintf("BTYD_%s_monthly_series_90days", shop.id)
+suffix <- sprintf("BTYD_%s_3months", shop.id)
 if (!dir.exists(file.path("plots", suffix))) dir.create(file.path("plots", suffix))
 # dt.dly.stats <- dt.dly[, .(st.dt = min(order.date), 
 #                            ed.dt = max(order.date),
@@ -53,14 +53,12 @@ result.lss <- mclapply(date.ls, function(start.date) {
     #     # cat(sprintf("%s\n", as.character(start.date)))
     #     cat(sprintf("shop:%s dur:%s st.dt:%s\n", shop.id, duration, as.character(start.date)))
     # }
-    per <- "day"
+    per <- "week"
     censor <- 7 # This censor serves the same purpose described above x.star <- cal.cbs[,"x.star"]
-    # mid.wks <- 12
-    # tot.wks <- mid.wks * 2
-    # end.date <- start.date %m+% weeks(tot.wks)
-    # cut.date <- start.date %m+% weeks(mid.wks)
-    cut.date <- start.date %m+% days(90)
-    end.date <- cut.date %m+% days(90)
+    mid.wks <- 12
+    tot.wks <- mid.wks * 2
+    end.date <- start.date %m+% weeks(tot.wks)
+    cut.date <- start.date %m+% weeks(mid.wks)
     # slackme()
     # data prep----
     # elog: daily transactions per customer
