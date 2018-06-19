@@ -26,7 +26,11 @@ slackme(sprintf("%s dt.dly done", shop.id), st.tm)
 
 
 # product dt.dly
+<<<<<<< HEAD
 shop.id <- 2131
+=======
+shop.id <- 14
+>>>>>>> 8f221c9aa2bbfde9454c15a61dc3c6f2677be70b
 dt.ts <- fread(sprintf("data/raw_input/TgAll_%s.csv", shop.id), fill=TRUE)
 setnames(dt.ts, colnames(dt.ts), c("SalesOrderSlaveId"
                                    ,"DateId"
@@ -89,8 +93,13 @@ dt.dly <- dt.prod[, .(N=.N,
                       promo.discnt=sum(promo.discnt),
                       ecoup.discnt=sum(ecoup.discnt),
                       Qty=sum(Qty)), by = .(ShopId, order.date, SalePageId)]
+<<<<<<< HEAD
 setorder(dt.dly, ShopId, SalePageId, order.date)
 dt.prod.dly <- dt.dly[, .(n.sales.item=uniqueN(SalePageId)), by = order.date]
+=======
+
+setorder(dt.dly, ShopId, SalePageId, order.date)
+>>>>>>> 8f221c9aa2bbfde9454c15a61dc3c6f2677be70b
 dt.dly[, `:=` (n.days.order=.N,
                nth.daily.order=1:.N,
                last.order.date=shift(order.date, 1L)), 
@@ -101,6 +110,7 @@ dt.dly[, recency.days:=as.integer(order.date - last.order.date)]
 save(dt.dly, file = sprintf("data/intermediates/dt.dly_prod_%s.RData", shop.id))
 slackme(sprintf("%s product dt.dly done", shop.id), st.tm)
 
+<<<<<<< HEAD
 setorder(dt.prod.dly, order.date)
 date.seq <- data.table(order.date=seq(min(dt.prod.dly$order.date), max(dt.prod.dly$order.date), by = "day"))
 dly.sales <- dt.prod.dly[date.seq, on = "order.date"][is.na(n.sales.item), n.sales.item:=0]
@@ -117,3 +127,5 @@ dly.sales %<>%
 View(dly.sales)
 plot_anomaly_decomposition(dly.sales)
 plot_anomalies(dly.sales, time_recomposed = TRUE)
+=======
+>>>>>>> 8f221c9aa2bbfde9454c15a61dc3c6f2677be70b

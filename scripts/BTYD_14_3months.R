@@ -6,33 +6,18 @@ mylib(c("data.table", "BTYD", "magrittr", "lubridate", "parallel", "googleCloudS
 # fixed
 # http://erikjohansson.blogspot.tw/2015/12/problems-with-btyd-walk-through-fixed.html
 
-<<<<<<< HEAD
-shop.id <- "all"
-fnm <- sprintf("data/intermediates/dt.dly_%s.RData", shop.id)
-load(fnm)
-setnames(dt.dly, "TotalPayment", "gross.sales")
-dt.dly.raw <- dt.dly
-# date.ls <- seq.Date(as.Date("2013-07-01"), as.Date("2016-04-30"), "month")
-suffix <- "BTYD_all"
-if (!dir.exists(file.path("plots", suffix))) dir.create(file.path("plots", suffix))
-dt.dly.stats <- dt.dly[, .(st.dt = min(order.date), 
-                           ed.dt = max(order.date),
-                           duration = as.integer(max(order.date)-min(order.date))), by = ShopId]
-shop.ls <- dt.dly.stats[duration > 365*2]$ShopId
-=======
 shop.id <- 14
 fnm <- sprintf("data/raw_input/dt.dly_%s.RData", shop.id)
 load(fnm)
 if(sum(grepl("TotalPayment", colnames(dt.dly)))>0) setnames(dt.dly, "TotalPayment", "gross.sales")
 dt.dly.raw <- dt.dly
 # date.ls <- seq.Date(as.Date("2013-07-01"), as.Date("2016-04-30"), "month")
-suffix <- sprintf("BTYD_%s_monthly_series_90days", shop.id)
+suffix <- sprintf("BTYD_%s_3months", shop.id)
 if (!dir.exists(file.path("plots", suffix))) dir.create(file.path("plots", suffix))
 # dt.dly.stats <- dt.dly[, .(st.dt = min(order.date), 
 #                            ed.dt = max(order.date),
 #                            duration = as.integer(max(order.date)-min(order.date))), by = ShopId]
 # shop.ls <- dt.dly.stats[duration > 365*2]$ShopId
->>>>>>> 8f221c9aa2bbfde9454c15a61dc3c6f2677be70b
 # fls <- file.path("plots", sprintf(suffix)) %>% list.files()
 # done.ls <- fls %>% strsplit(., "_") %>%
 #     lapply(., "[", 2) %>% unlist()
@@ -43,34 +28,6 @@ if (!dir.exists(file.path("plots", suffix))) dir.create(file.path("plots", suffi
 # shop.ls <- shop.ls[!shop.ls %in% done.ls]
 # shop.id <- 360
 # shop.ls <- c(11, 49, 1327, 815, 16)
-<<<<<<< HEAD
-result.lss <- mclapply(shop.ls, function(shop.id) {
-    param.ls <- NULL
-    result.ls <- NULL
-    dt.dly <- dt.dly.raw[ShopId == shop.id]
-    duration <- dt.dly.stats[ShopId==shop.id]$duration
-    start.date <- dt.dly.stats[ShopId==shop.id]$st.dt
-    ed.dt <- dt.dly.stats[ShopId==shop.id]$ed.dt
-    if (duration > 365 * 2) {
-        tot.wks <- difftime(ed.dt, start.date, units = "weeks") %>% floor(.) %>% as.integer()
-        end.date <- start.date %m+% weeks(tot.wks)
-        mid.wks <- 52
-        cut.date <- end.date %m-% weeks(mid.wks)
-    } else {
-        tot.wks <- difftime(ed.dt, start.date, units = "weeks") %>% floor(.) %>% as.integer()
-        mid.wks <- tot.wks %/% 2
-        end.date <- start.date %m+% weeks(tot.wks)
-        cut.date <- start.date %m+% weeks(mid.wks)
-    }
-    if (which(shop.id==dt.dly.stats$ShopId) %% 1==0) {
-        # cat(sprintf("%s\n", as.character(start.date)))
-        cat(sprintf("shop:%s dur:%s st.dt:%s\n", shop.id, duration, as.character(start.date)))
-    }
-    per <- "week"
-    censor <- 7 # This censor serves the same purpose described above x.star <- cal.cbs[,"x.star"]
-    # mid.wks <- 52
-    # tot.wks <- mid.wks * 2
-=======
 
 date.ls <- seq.Date(as.Date("2013-07-01"), as.Date("2018-01-30"), "month")
 # result.lss <- mclapply(shop.ls, function(shop.id) {
@@ -96,15 +53,12 @@ result.lss <- mclapply(date.ls, function(start.date) {
     #     # cat(sprintf("%s\n", as.character(start.date)))
     #     cat(sprintf("shop:%s dur:%s st.dt:%s\n", shop.id, duration, as.character(start.date)))
     # }
-    per <- "day"
+    per <- "week"
     censor <- 7 # This censor serves the same purpose described above x.star <- cal.cbs[,"x.star"]
-    # mid.wks <- 12
-    # tot.wks <- mid.wks * 2
-    # end.date <- start.date %m+% weeks(tot.wks)
-    # cut.date <- start.date %m+% weeks(mid.wks)
-    cut.date <- start.date %m+% days(90)
-    end.date <- cut.date %m+% days(90)
->>>>>>> 8f221c9aa2bbfde9454c15a61dc3c6f2677be70b
+    mid.wks <- 12
+    tot.wks <- mid.wks * 2
+    end.date <- start.date %m+% weeks(tot.wks)
+    cut.date <- start.date %m+% weeks(mid.wks)
     # slackme()
     # data prep----
     # elog: daily transactions per customer
@@ -290,11 +244,7 @@ result.lss <- mclapply(date.ls, function(start.date) {
 # plot(tmp1)
 
 system(sprintf("zip %s plots/%s/*", suffix, suffix))
-<<<<<<< HEAD
-save(result.lss, file = file.path("data/models", sprintf("%s.result.lss-v01.RData", suffix)))
-=======
 save(result.lss, file = file.path("data/models", sprintf("%s.result.lss.RData", suffix)))
->>>>>>> 8f221c9aa2bbfde9454c15a61dc3c6f2677be70b
 
 default.bucket <- "helen-ml-4standard"
 Sys.setenv("GCS_AUTH_FILE" = "/home/helen/gcs.oauth",
@@ -305,9 +255,5 @@ gcs_global_bucket(default.bucket)
 # gcs_list_objects()
 gcs_upload(sprintf("%s.zip", suffix), name = sprintf("%s.zip", suffix))
 
-<<<<<<< HEAD
-file.copy("BTYD.monthly.series.R", sprintf("scripts/%s.R", suffix), overwrite = T)
-=======
 file.copy("BTYD.shop.all.R", sprintf("scripts/%s.R", suffix), overwrite = T)
->>>>>>> 8f221c9aa2bbfde9454c15a61dc3c6f2677be70b
 slackme("done", st.tm)
