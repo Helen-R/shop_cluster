@@ -1,6 +1,6 @@
 source("../auxiliary/mylib.R")
 source("../auxiliary/dbhandle.R")
-mylib(c("data.table"))
+mylib(c("data.table", "fastDummies"))
 
 db <- dbhandle(db="DS")
 
@@ -9,12 +9,7 @@ dt1 <- sqlQuery(db, sql) %>% data.table
 
 sql <- "select * from DsWorkSpace.dbo.ShopMonthlyForMillion where YearMonth = 201805"
 dt2 <- sqlQuery(db, sql) %>% data.table
-
-# sql <- "select * from DS.dbo.NAPLSRNNRepurchaseMonthlySummary Where YearMonth = 201805"
-# dt3 <- sqlQuery(db, sql) %>% data.table
-
 close(db)
-
 dt <- dt1[dt2, on = c("ShopId", "YearMonth")]
 dt[, `:=` (web.ga.perc = round(WebGaSessions / GaSessions, 2),
            web.tg.perc = round(WebOrderTgCounts / OrderTgCounts, 2),
@@ -36,18 +31,17 @@ mydata.all[, `:=` (arpu=cut(arpu, c(0, 1000, 2000, 3000, max(na.omit(arpu))), la
                    return.perc=cut(return.perc, c(0, 0.4, 0.6, 1), labels = c("-1", "0", "1"), include.lowest = TRUE),
                    WebConversion=round(WebConversion*100, 2),
                    AppConversion=round(AppConversion*100, 2))]
-mydata.all[, `:=` (arpu=as.integer(as.character(arpu)),
-                   web.ga.perc=as.integer(as.character(web.ga.perc)),
-                   return.perc=as.integer(as.character(return.perc)))]
+# mydata.all[, `:=` (arpu=as.integer(as.character(arpu)),
+#                    web.ga.perc=as.integer(as.character(web.ga.perc)),
+#                    return.perc=as.integer(as.character(return.perc)))]
 mydata.all <- na.omit(mydata.all)
-# mydata <- mydata.all[, .(WebConversion, AppConversion, BeenMillionLastSixMonths,
-#                          web.ga.perc, web.tg.perc, return.perc, arpu, D1Plus, D2Plus)]
 mydata <- mydata.all[, .(WebConversion, AppConversion, 
                          # BeenMillionLastSixMonths,
                          web.ga.perc, return.perc, arpu)]
+mydata <- fastDummies::dummy_cols(mydata)
 # mydata <- scale(mydata)
 wss <- (nrow(mydata)-1)*sum(apply(mydata,2,var), na.rm = T)
-n.group <- 15
+n.group <- 30
 for (i in 2:n.group) wss[i] <- sum(kmeans(mydata, 
                                           centers=i)$withinss)
 plot(1:n.group, wss, type="b", xlab="Number of Clusters",
@@ -109,7 +103,11 @@ mylib("fpc")
 fpc::plotcluster(mydata, mydata.all$fit.cluster)
 fpc::plotcluster(mydata, mydata.all$fit.hcluster)
 fpc::plotcluster(mydata, mydata.all$fit.mclust)
-mydata.all[ShopId %in% c(711, 1074), fit.cluster:=4]
+mydata.all[ShopId %in% c(711, 14)]
+# mydata.all[ShopId %in% c(711, 1074), fit.cluster:=4]
+mydata.all[, `:=` (web.ga.perc=as.integer(as.character(web.ga.perc)),
+                   return.perc=as.integer(as.character(return.perc)),
+                   arpu=as.integer(as.character(arpu)))]
 tmp <- mydata.all[, .(AvgNetSalesSixMonths=mean(AvgNetSalesSixMonths), 
                       mAvgNetSalesSixMonths=median(AvgNetSalesSixMonths), 
                       AvgNetSalesSixMonths.sd=sd(AvgNetSalesSixMonths),
@@ -130,15 +128,35 @@ tmp <- mydata.all[, .(AvgNetSalesSixMonths=mean(AvgNetSalesSixMonths),
 setorder(tmp, fit.cluster)
 tmp
 View(tmp)
-# mydata.all[, .(mean(OrderSales), .N), by = .(fit.hcluster)]
-# mydata.all[ShopId%in%c(14, 1317, 156, 11, 15, 815, 2202)]
-# View(aggregate(mydata,by=list(mydata.all$fit.cluster),FUN=mean))
+mydata.all[, `:=` (web.ga.perc=as.integer(as.character(web.ga.perc)),
+                   return.perc=as.integer(as.character(return.perc)),
+                   arpu=as.integer(as.character(arpu)))]
+tmp.h <- mydata.all[, .(AvgNetSalesSixMonths=mean(AvgNetSalesSixMonths), 
+                      mAvgNetSalesSixMonths=median(AvgNetSalesSixMonths), 
+                      AvgNetSalesSixMonths.sd=sd(AvgNetSalesSixMonths),
+                      WebConversion=mean(WebConversion), 
+                      mWebConversion=median(WebConversion), 
+                      AppConversion=mean(AppConversion),
+                      mAppConversion=median(AppConversion),
+                      web.ga.perc=mean(web.ga.perc),
+                      mweb.ga.perc=median(web.ga.perc),
+                      return.perc=mean(return.perc),
+                      mreturn.perc=median(return.perc),
+                      arpu=mean(arpu),
+                      marpu=median(arpu),
+                      # been.milli=mean(BeenMillionLastSixMonths),
+                      # D1Plus=mean(D1Plus),
+                      # D2Plus=mean(D2Plus), 
+                      .N), by = .(fit.hcluster)]
+setorder(tmp.h, fit.hcluster)
+tmp.h
+View(tmp.h)
 
 tmp1 <- dt[, .(ShopId, x, SalePageCounts, D1Plus, D2Plus, R3)]
 mydata.all <- tmp1[mydata.all, on ="ShopId"]
 View(mydata.all)
-save(mydata.all, file="data/output/shop_cluster-1.RData")
-write.csv(mydata.all, file="data/output/shop_cluster-1.csv", row.names = F)
+save(mydata.all, file="data/output/shop_cluster-dummy.RData")
+write.csv(mydata.all, file="data/output/shop_cluster-dummy.csv", row.names = F)
 
 # prediction
 mydata.predict <- dt[AvgNetSalesSixMonths <= 1000000 & OrderSales > 0 &ShopStatusDef == "Open", 
@@ -199,8 +217,8 @@ table(pred.km)
 mydata.predict[, fit.kccluster:=pred.km]
 tmp1 <- dt[, .(ShopId, x, SalePageCounts, D1Plus, D2Plus, R3)]
 mydata.predict <- tmp1[mydata.predict, on ="ShopId"]
-save(mydata.predict, file="data/output/shop_cluster_potential.RData")
-write.csv(mydata.predict, file="data/output/shop_cluster_potential.csv", row.names = F)
+save(mydata.predict, file="data/output/shop_cluster_potential-dummy.RData")
+write.csv(mydata.predict, file="data/output/shop_cluster_potential-dummy.csv", row.names = F)
 
 tmp <- mydata.predict[, .(AvgNetSalesSixMonths=mean(AvgNetSalesSixMonths), 
                           mAvgNetSalesSixMonths=median(AvgNetSalesSixMonths), 

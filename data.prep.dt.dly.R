@@ -26,7 +26,7 @@ slackme(sprintf("%s dt.dly done", shop.id), st.tm)
 
 
 # product dt.dly
-shop.id <- 14
+shop.id <- 2131
 dt.ts <- fread(sprintf("data/raw_input/TgAll_%s.csv", shop.id), fill=TRUE)
 setnames(dt.ts, colnames(dt.ts), c("SalesOrderSlaveId"
                                    ,"DateId"
@@ -89,8 +89,8 @@ dt.dly <- dt.prod[, .(N=.N,
                       promo.discnt=sum(promo.discnt),
                       ecoup.discnt=sum(ecoup.discnt),
                       Qty=sum(Qty)), by = .(ShopId, order.date, SalePageId)]
-
 setorder(dt.dly, ShopId, SalePageId, order.date)
+dt.prod.dly <- dt.dly[, .(n.sales.item=uniqueN(SalePageId)), by = order.date]
 dt.dly[, `:=` (n.days.order=.N,
                nth.daily.order=1:.N,
                last.order.date=shift(order.date, 1L)), 
@@ -101,3 +101,19 @@ dt.dly[, recency.days:=as.integer(order.date - last.order.date)]
 save(dt.dly, file = sprintf("data/intermediates/dt.dly_prod_%s.RData", shop.id))
 slackme(sprintf("%s product dt.dly done", shop.id), st.tm)
 
+setorder(dt.prod.dly, order.date)
+date.seq <- data.table(order.date=seq(min(dt.prod.dly$order.date), max(dt.prod.dly$order.date), by = "day"))
+dly.sales <- dt.prod.dly[date.seq, on = "order.date"][is.na(n.sales.item), n.sales.item:=0]
+setorder(dly.sales, order.date)
+
+
+# ts: number of product items sold
+mylib(c("magrittr", "plyr", "ggplot2", "anomalize", "tibbletime"))
+dly.sales %<>%  
+    as_tbl_time(., index = order.date) %>% 
+    time_decompose(n.sales.item, method="stl", frequency = "6 month", trend = "12 months") %>% 
+    anomalize(remainder, metho="iqr") %>% 
+    time_recompose() 
+View(dly.sales)
+plot_anomaly_decomposition(dly.sales)
+plot_anomalies(dly.sales, time_recomposed = TRUE)
